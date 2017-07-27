@@ -1,4 +1,4 @@
-module Data exposing (videoData, VideoData, TextTime)
+module Data exposing (videoData, TextTime)
 
 import Json.Decode exposing (Decoder)
 import Debug
@@ -11,7 +11,7 @@ videoData =
             data
 
         Err error ->
-            Debug.crash "Invalid JSON, make sure the the structure is correct."
+            Debug.crash "Invalid JSON, make sure the structure is correct."
 
 
 type alias VideoData =
