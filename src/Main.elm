@@ -6,6 +6,7 @@ import Html.Events exposing (..)
 import Random exposing (Generator)
 import Regex
 import Set exposing (Set)
+import Tuple
 import Data exposing (TextTime, videoData)
 
 
@@ -42,6 +43,31 @@ getLine lines time =
             |> List.reverse
             |> List.head
             |> Maybe.withDefault firstLine
+
+
+toHiddenLine : Set Int -> TextTime -> List TextTime -> TextTime
+toHiddenLine wordIndexes line lines =
+    lines
+        |> List.map2 (,) (getWordOffsets lines)
+        |> List.filter (Tuple.second >> (==) line)
+        |> first
+        |> Tuple.mapSecond toWords
+        |> (\( offset, words ) ->
+                List.range offset (offset + (List.length words - 1))
+                    |> List.filter (\i -> Set.member i wordIndexes)
+                    |> List.map (\i -> get (i - offset) words)
+           )
+        |> (\words -> TextTime (String.join " " words) line.time)
+
+
+get : Int -> List a -> a
+get index list =
+    case list |> List.drop index |> List.head of
+        Just element ->
+            element
+
+        Nothing ->
+            Debug.crash "You tried to get an element that doesn't exist."
 
 
 toWords : TextTime -> List String
