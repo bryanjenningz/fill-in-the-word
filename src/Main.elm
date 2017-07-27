@@ -4,16 +4,19 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Random exposing (Generator)
+import Regex
 import Data exposing (TextTime, videoData)
 
 
 type Msg
     = Time Float
+    | Input String
 
 
 type alias Model =
     { time : Float
     , lines : List TextTime
+    , line : TextTime
     , input : String
     }
 
@@ -75,9 +78,24 @@ shouldPause input textTime time =
     textTime.time + 5 < time && input /= textTime.text
 
 
+removeNonAlpha : String -> String
+removeNonAlpha =
+    Regex.replace Regex.All (Regex.regex "[^a-zA-Z]") (\_ -> "")
+
+
+first : List a -> a
+first list =
+    case List.head list of
+        Just head ->
+            head
+
+        Nothing ->
+            Debug.crash "Your list needs to be non-empty"
+
+
 init : ( Model, Cmd Msg )
 init =
-    ( Model 0 videoData.lines "", Cmd.none )
+    ( Model 0 videoData.lines (first videoData.lines) "", Cmd.none )
 
 
 view : Model -> Html Msg
@@ -91,6 +109,12 @@ update msg model =
     case msg of
         Time time ->
             ( { model | time = time }, Cmd.none )
+
+        Input input ->
+            if String.startsWith input (removeNonAlpha model.line.text) then
+                ( { model | input = input }, Cmd.none )
+            else
+                ( model, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
