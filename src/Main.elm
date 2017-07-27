@@ -5,12 +5,15 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Random exposing (Generator)
 import Regex
+import Set exposing (Set)
 import Data exposing (TextTime, videoData)
 
 
 type Msg
     = Time Float
     | Input String
+    | GenerateIndexes
+    | WordIndex Int
 
 
 type alias Model =
@@ -18,6 +21,8 @@ type alias Model =
     , lines : List TextTime
     , line : TextTime
     , input : String
+    , playing : Bool
+    , wordIndexes : Set Int
     }
 
 
@@ -44,6 +49,11 @@ toWords =
     .text >> String.split " "
 
 
+wordCount : TextTime -> Int
+wordCount =
+    toWords >> List.length
+
+
 getAllWords : List TextTime -> List String
 getAllWords lines =
     lines
@@ -54,7 +64,7 @@ getAllWords lines =
 getWordOffsets : List TextTime -> List Int
 getWordOffsets lines =
     lines
-        |> List.map (toWords >> List.length)
+        |> List.map wordCount
         |> List.scanl (+) 0
 
 
@@ -66,7 +76,7 @@ randomWordIndexes lines =
             (\( wordOffset, line ) indexes ->
                 (Random.int
                     wordOffset
-                    (wordOffset + (toWords >> List.length) line - 1)
+                    (wordOffset + wordCount line - 1)
                 )
                     :: indexes
             )
@@ -95,7 +105,9 @@ first list =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model 0 videoData.lines (first videoData.lines) "", Cmd.none )
+    ( Model 0 videoData.lines (first videoData.lines) "" False Set.empty
+    , Cmd.none
+    )
 
 
 view : Model -> Html Msg
@@ -115,6 +127,20 @@ update msg model =
                 ( { model | input = input }, Cmd.none )
             else
                 ( model, Cmd.none )
+
+        GenerateIndexes ->
+            ( model
+            , Cmd.batch
+                (List.map
+                    (Random.generate WordIndex)
+                    (randomWordIndexes model.lines)
+                )
+            )
+
+        WordIndex wordIndex ->
+            ( { model | wordIndexes = Set.insert wordIndex model.wordIndexes }
+            , Cmd.none
+            )
 
 
 subscriptions : Model -> Sub Msg
