@@ -13,7 +13,6 @@ import Data exposing (TextTime, videoData)
 type Msg
     = Time Float
     | Input String
-    | GenerateIndexes
     | WordIndex Int
 
 
@@ -131,9 +130,17 @@ first list =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model 0 videoData.lines (first videoData.lines) "" False Set.empty
-    , Cmd.none
-    )
+    let
+        line =
+            (first videoData.lines)
+    in
+        ( Model 0 videoData.lines line "" False Set.empty
+        , Cmd.batch
+            (List.map
+                (Random.generate WordIndex)
+                (randomWordIndexes videoData.lines)
+            )
+        )
 
 
 view : Model -> Html Msg
@@ -153,15 +160,6 @@ update msg model =
                 ( { model | input = input }, Cmd.none )
             else
                 ( model, Cmd.none )
-
-        GenerateIndexes ->
-            ( model
-            , Cmd.batch
-                (List.map
-                    (Random.generate WordIndex)
-                    (randomWordIndexes model.lines)
-                )
-            )
 
         WordIndex wordIndex ->
             ( { model | wordIndexes = Set.insert wordIndex model.wordIndexes }
